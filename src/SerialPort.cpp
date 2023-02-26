@@ -185,14 +185,14 @@ namespace CppLinuxSerial {
             default:
                 THROW_EXCEPT("numDataBits_ value not supported!");
         }
-        
+
         // Set parity
         // See https://man7.org/linux/man-pages/man3/tcflush.3.html
         switch(parity_) {
             case Parity::NONE:
                 tty.c_cflag     &=  ~PARENB;
                 break;
-            case Parity::EVEN:	
+            case Parity::EVEN:
                 tty.c_cflag 	|=   PARENB;
                 tty.c_cflag		&=	 ~PARODD; // Clearing PARODD makes the parity even
                 break;
@@ -446,7 +446,7 @@ namespace CppLinuxSerial {
                 tty.c_iflag |= (IXON | IXOFF | IXANY);
             break;
         }
-        
+
         tty.c_iflag 	&= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL);
 
         //=========================== LOCAL MODES (c_lflag) =======================//
@@ -660,14 +660,14 @@ namespace CppLinuxSerial {
             THROW_EXCEPT(std::string() + __PRETTY_FUNCTION__ + " called while state == OPEN.");
         timeout_ms_ = timeout_ms;
     }
-    
+
     int32_t SerialPort::Available() {
         if(state_ != State::OPEN)
             THROW_EXCEPT(std::string() + __PRETTY_FUNCTION__ + " called but state != OPEN. Please call Open() first.");
         int32_t ret = 0;
         ioctl(fileDesc_, FIONREAD, &ret);
         return ret;
-        
+
     }
     State SerialPort::GetState() {
       return state_;
