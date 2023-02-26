@@ -18,6 +18,7 @@
 // #include <termios.h> // POSIX terminal control definitions (struct termios)
 // #include <asm/termios.h> // Terminal control definitions (struct termios)
 #include <vector>
+#include <array>
 #include <asm/ioctls.h>
 #include <asm/termbits.h>
 
@@ -171,13 +172,18 @@ namespace mn {
             /// \throws     CppLinuxSerial::Exception if state != OPEN.
             void WriteBinary(const std::vector<uint8_t>& data);
 
+            template<std::size_t N>
+            void WriteBinary(const std::array<uint8_t, N> &data);
+
             /// \brief      Use to read text from the COM port. Blocking nature depends on SetTimeout().
             /// \param      data        The read characters from the COM port will be appended to this string.
             /// \note       Use ReadBinary() if you want to interpret received data as binary.
-            /// \throws     
+            /// \throws
             ///             CppLinuxSerial::Exception if state != OPEN.
             ///             std::system_error() if device has been disconnected.
             void Read(std::string& data);
+
+            ssize_t ReadByte(uint8_t* byte);
 
             /// \brief      Use to read binary data from the COM port. Blocking nature depends on SetTimeout().
             /// \param      data        The read bytes from the COM port will be appended to this vector.
@@ -247,7 +253,7 @@ namespace mn {
             int32_t timeout_ms_;
 
             std::vector<char> readBuffer_;
-            unsigned char readBufferSize_B_;
+            uint32_t readBufferSize_B_;
 
             static constexpr BaudRate defaultBaudRate_ = BaudRate::B_57600;
             static constexpr int32_t defaultTimeout_ms_ = -1;

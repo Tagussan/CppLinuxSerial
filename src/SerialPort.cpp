@@ -501,7 +501,23 @@ namespace CppLinuxSerial {
     }
 
     void SerialPort::WriteBinary(const std::vector<uint8_t>& data) {
+        if(state_ != State::OPEN)
+            THROW_EXCEPT(std::string() + __PRETTY_FUNCTION__ + " called but state != OPEN. Please call Open() first.");
 
+        if(fileDesc_ < 0) {
+            THROW_EXCEPT(std::string() + __PRETTY_FUNCTION__ + " called but file descriptor < 0, indicating file has not been opened.");
+        }
+
+        int writeResult = write(fileDesc_, data.data(), data.size());
+
+        // Check status
+        if (writeResult == -1) {
+            throw std::system_error(EFAULT, std::system_category());
+        }
+    }
+
+    template<std::size_t N>
+    void SerialPort::WriteBinary(const std::array<uint8_t, N>& data) {
         if(state_ != State::OPEN)
             THROW_EXCEPT(std::string() + __PRETTY_FUNCTION__ + " called but state != OPEN. Please call Open() first.");
 
@@ -549,6 +565,37 @@ namespace CppLinuxSerial {
         }
 
         // If code reaches here, read must of been successful
+    }
+
+    ssize_t SerialPort::ReadByte(uint8_t* byte) {
+        if(fileDesc_ == 0) {
+            //this->sp->PrintError(SmartPrint::Ss() << "Read() was called but file descriptor (fileDesc) was 0, indicating file has not been opened.");
+            //return false;
+            THROW_EXCEPT("Read() was called but file descriptor (fileDesc) was 0, indicating file has not been opened.");
+        }
+
+        // Read from file
+        // We provide the underlying raw array from the readBuffer_ vector to this C api.
+        // This will work because we do not delete/resize the vector while this method
+        // is called
+        ssize_t n = read(fileDesc_, byte, 1);
+
+        // Error Handling
+        if(n < 0) {
+            // Read was unsuccessful
+            throw std::system_error(EFAULT, std::system_category());
+        }
+        else if(n == 0) {
+            // n == 0 means EOS, but also returned on device disconnection. We try to get termios2 to distinguish two these two states
+            struct termios2 term2;
+            int rv = ioctl(fileDesc_, TCGETS2, &term2);
+
+            if(rv != 0) {
+                throw std::system_error(EFAULT, std::system_category());
+            }
+        }
+        // If code reaches here, read byte must of been successful
+        return n;
     }
 
     void SerialPort::ReadBinary(std::vector<uint8_t>& data) {
